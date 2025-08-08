@@ -1,7 +1,7 @@
 import config from './config.js';
-import ScheduleDetectorService from './scheduleDetector.service.js';
+import { ScheduleDetectorService } from './services/scheduleDetector.service.js';
 
-function formatTime() {
+function formatTime(): string {
   return new Date().toLocaleString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -12,7 +12,7 @@ function formatTime() {
   });
 }
 
-async function runDetection() {
+async function runDetection(): Promise<void> {
   try {
     const detector = new ScheduleDetectorService();
     await detector.run();
@@ -21,7 +21,7 @@ async function runDetection() {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log(`===== 메디치스 스케줄 감지기 =====\n[${formatTime()}]`);
   console.log(`실행 간격: ${config.scheduler.runIntervalHours}시간`);
   console.log(`한 번만 실행: ${config.scheduler.runOnce ? '예' : '아니오'}\n`);
