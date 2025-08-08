@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DetectionResult, DetectionRow, HospitalMap } from '../types/database.js';
+import { DetectionResult, DetectionRow, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO, FIELD_NAME_MAPPING } from '../types/database.js';
 
 export interface ExcelExportOptions {
   outputDir?: string;
@@ -26,64 +26,40 @@ export class ExcelService {
     }
   }
 
-  private generateFileName(queryName?: string): string {
-    const timestamp = this.options.includeTimestamp 
-      ? `_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '_').replace(/-/g, '')}`
-      : '';
+  private generateFileName(baseName: string): string {
+    if (this.options.includeTimestamp) {
+      const now = new Date();
+      // 한국 시간으로 변환 (UTC+9)
+      const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      
+      const year = koreaTime.getUTCFullYear();
+      const month = String(koreaTime.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(koreaTime.getUTCDate()).padStart(2, '0');
+      const hour = String(koreaTime.getUTCHours()).padStart(2, '0');
+      const minute = String(koreaTime.getUTCMinutes()).padStart(2, '0');
+      
+      const timestamp = `_${year}${month}${day}_${hour}${minute}`;
+      return `${baseName}${timestamp}.xlsx`;
+    }
     
-    const baseName = queryName ? `${queryName}_detection` : 'schedule_detection';
-    return `${baseName}${timestamp}.xlsx`;
+    return `${baseName}.xlsx`;
   }
 
-  private formatRowForExcel(row: DetectionRow, dbName: string, queryName: string): Record<string, any> {
+  private formatRowForExcel(row: DetectionRow, dbName: string): Record<string, any> {
     const hospitalName = HospitalMap[dbName]?.hospitalName || '알 수 없는 병원';
     
+    // 필드명을 한국어로 변환
+    const koreanRow: Record<string, any> = {};
+    for (const [key, value] of Object.entries(row)) {
+      const koreanKey = FIELD_NAME_MAPPING[key] || key;
+      koreanRow[koreanKey] = value;
+    }
+    
     return {
-      '감지유형': queryName,
       '병원코드': dbName,
       '병원명': hospitalName,
-      '감지일시': new Date().toLocaleString('ko-KR'),
-      ...row
+      ...koreanRow
     };
-  }
-
-  async exportSingleQuery(results: DetectionResult[], queryName: string): Promise<string> {
-    this.ensureOutputDir();
-    
-    const workbook = XLSX.utils.book_new();
-    const allRows: Record<string, any>[] = [];
-
-    // 모든 결과를 하나의 배열로 합치기
-    for (const result of results) {
-      if (result.count > 0) {
-        const formattedRows = result.rows.map(row => 
-          this.formatRowForExcel(row, result.dbName, result.queryName)
-        );
-        allRows.push(...formattedRows);
-      }
-    }
-
-    if (allRows.length === 0) {
-      console.log(`${queryName} 쿼리 결과가 없어 Excel 파일을 생성하지 않습니다.`);
-      return '';
-    }
-
-    // 워크시트 생성
-    const worksheet = XLSX.utils.json_to_sheet(allRows);
-    
-    // 컬럼 너비 자동 조정
-    const colWidths = this.calculateColumnWidths(allRows);
-    worksheet['!cols'] = colWidths;
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, queryName);
-
-    // 파일 저장
-    const fileName = this.generateFileName(queryName);
-    const filePath = path.join(this.options.outputDir!, fileName);
-    XLSX.writeFile(workbook, filePath);
-
-    console.log(`Excel 파일이 생성되었습니다: ${filePath} (${allRows.length}행)`);
-    return filePath;
   }
 
   async exportAllResults(allResults: DetectionResult[]): Promise<string> {
@@ -101,7 +77,7 @@ export class ExcelService {
         for (const result of results) {
           if (result.count > 0) {
             const formattedRows = result.rows.map(row => 
-              this.formatRowForExcel(row, result.dbName, result.queryName)
+              this.formatRowForExcel(row, result.dbName)
             );
             allRows.push(...formattedRows);
           }
@@ -109,6 +85,7 @@ export class ExcelService {
 
         if (allRows.length > 0) {
           const worksheet = XLSX.utils.json_to_sheet(allRows);
+          
           const colWidths = this.calculateColumnWidths(allRows);
           worksheet['!cols'] = colWidths;
           
@@ -124,7 +101,7 @@ export class ExcelService {
       for (const result of allResults) {
         if (result.count > 0) {
           const formattedRows = result.rows.map(row => 
-            this.formatRowForExcel(row, result.dbName, result.queryName)
+            this.formatRowForExcel(row, result.dbName)
           );
           allRows.push(...formattedRows);
         }
@@ -132,6 +109,7 @@ export class ExcelService {
 
       if (allRows.length > 0) {
         const worksheet = XLSX.utils.json_to_sheet(allRows);
+        
         const colWidths = this.calculateColumnWidths(allRows);
         worksheet['!cols'] = colWidths;
         
@@ -143,7 +121,7 @@ export class ExcelService {
     this.addSummarySheet(workbook, allResults);
 
     // 파일 저장
-    const fileName = this.generateFileName();
+    const fileName = this.generateFileName('스케줄 감지');
     const filePath = path.join(this.options.outputDir!, fileName);
     XLSX.writeFile(workbook, filePath);
 
@@ -167,14 +145,15 @@ export class ExcelService {
 
   private getQueryDescription(queryName: string): string {
     const descriptions: Record<string, string> = {
-      'invalidVisitType': '잘못된진료구분',
-      'insuranceMismatch': '자격조회불일치',
-      'doctorMismatch': '담당의불일치',
-      'dateMismatch': '날짜불일치'
+      [QUERY_TYPE.VISITTYPE_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.VISITTYPE_MISMATCH].excelSheetName,
+      [QUERY_TYPE.INSURANCE_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.INSURANCE_MISMATCH].excelSheetName,
+      [QUERY_TYPE.DOCTOR_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.DOCTOR_MISMATCH].excelSheetName,
+      [QUERY_TYPE.CONSULTTIME_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].excelSheetName
     };
     
     return descriptions[queryName] || queryName;
   }
+
 
   private addSummarySheet(workbook: XLSX.WorkBook, allResults: DetectionResult[]): void {
     const summary = new Map<string, Map<string, number>>();
@@ -208,6 +187,7 @@ export class ExcelService {
 
     if (summaryRows.length > 0) {
       const worksheet = XLSX.utils.json_to_sheet(summaryRows);
+      
       const colWidths = this.calculateColumnWidths(summaryRows);
       worksheet['!cols'] = colWidths;
       

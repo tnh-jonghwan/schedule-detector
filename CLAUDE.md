@@ -41,6 +41,12 @@ Excel export configuration:
 - `EXCEL_INCLUDE_TIMESTAMP` - Include timestamp in filename (default: true)
 - `EXCEL_SEPARATE_SHEETS` - Create separate sheets for each query type (default: true)
 
+Slack notification configuration:
+- `SLACK_ENABLED` - Set to 'true' to enable Slack notifications
+- `SLACK_BOT_TOKEN` - Slack bot token (required for Slack functionality)
+- `SLACK_CHANNEL` - Target Slack channel ID or name (required for Slack functionality)
+- `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_VERIFICATION_TOKEN` - Slack app credentials (pre-configured)
+
 ### Database Processing
 
 The service:

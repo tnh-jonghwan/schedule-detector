@@ -20,6 +20,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@slack/web-api": "^7.9.3",
     "dotenv": "^16.3.1",
     "mysql2": "^3.6.5",
     "xlsx": "^0.18.5"

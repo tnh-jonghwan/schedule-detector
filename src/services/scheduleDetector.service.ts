@@ -1,21 +1,22 @@
 import config from '../config.js';
 import { DatabaseService } from './database.service.js';
 import { ExcelService } from './excel.service.js';
+import { SlackService } from './slack.service.js';
 import { 
   DatabaseInfo, 
   DetectionQuery, 
   DetectionResult, 
   DetectionRow,
-  ScheduleRow,
-  InsuranceMismatchRow,
-  DoctorMismatchRow,
-  DateMismatchRow,
-  HospitalMap
+  HospitalMap,
+  QUERY_TYPE,
+  QUERY_TYPE_INFO,
+  FIELD_NAME_MAPPING
 } from '../types/database.js';
 
 export class ScheduleDetectorService {
   private dbService: DatabaseService;
   private excelService: ExcelService;
+  private slackService: SlackService;
   private startDate: string;
   private detectionQueries: DetectionQuery[];
 
@@ -26,6 +27,11 @@ export class ScheduleDetectorService {
       includeTimestamp: config.excel.includeTimestamp,
       separateSheets: config.excel.separateSheets
     });
+    this.slackService = new SlackService({
+      enabled: config.slack.enabled,
+      token: config.slack.token,
+      channel: config.slack.channel
+    });
     this.startDate = "20250501";
     this.detectionQueries = this.initializeDetectionQueries();
   }
@@ -33,9 +39,9 @@ export class ScheduleDetectorService {
   private initializeDetectionQueries(): DetectionQuery[] {
     return [
       {
-        name: 'invalidVisitType',
-        description: '주스케줄 진료구분이 초, 재초, 재가 아닌 경우',
-        query: `SELECT P.PATID, P.PATNAME, P.CHARTNO, S.SCHID, M.MRID, M.CONSULTTIME, E.EMPLNAME, E.EMPLID, S.VISITTYPE
+        name: QUERY_TYPE.VISITTYPE_MISMATCH,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.VISITTYPE_MISMATCH].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, M.CONSULTTIME, E.EMPLNAME, P.PATID, S.SCHID, S.VISITTYPE, M.MRID, E.EMPLID
                 FROM {dbName}.TSCHEDULE S
                 JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
                 JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
@@ -47,20 +53,21 @@ export class ScheduleDetectorService {
         enabled: true
       },
       {
-        name: 'insuranceMismatch',
-        description: '자격조회 환자 매칭 안되는 경우',
-        query: `SELECT H.INSID, P.PATID, P.PATNAME, P.CHARTNO
+        name: QUERY_TYPE.INSURANCE_MISMATCH,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.INSURANCE_MISMATCH].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, M.CONSULTTIME, H.INSID, P.PATID, S.SCHID, M.MRID
                 FROM {dbName}.TSCHEDULE S
                 JOIN {dbName}.THEALTHINSURANCE H ON H.SCHID = S.SCHID
+                JOIN {dbName}.TMEDICALRECORD M ON M.MRID = H.MRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
                 WHERE S.PATID != H.PATID
                 AND S.SCHDATE >= ?`,
         enabled: true
       },
       {
-        name: 'doctorMismatch',
-        description: '스케줄의 담당의와 차트의 담당의가 매칭 안되는 경우',
-        query: `SELECT P.PATID, P.PATNAME, P.CHARTNO, S.SCHID, M.MRID, M.CONSULTTIME, E.EMPLNAME, E.EMPLID
+        name: QUERY_TYPE.DOCTOR_MISMATCH,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.DOCTOR_MISMATCH].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, M.CONSULTTIME, E.EMPLNAME, P.PATID, S.SCHID, M.MRID, E.EMPLID, PR.DRID AS DRID_A, M.DRID AS DRID_B
                  FROM {dbName}.TSCHEDULE S
                  JOIN {dbName}.TPROCSLIP PR ON PR.SCHID = S.SCHID AND PR.SLPTYPE IN (2, 3)
                  JOIN {dbName}.TMEDICALRECORD M ON M.MRID = PR.MRID
@@ -72,9 +79,9 @@ export class ScheduleDetectorService {
         enabled: true
       },
       {
-        name: 'dateMismatch',
-        description: '외래만, 스케줄과 차트날짜가 다른 경우',
-        query: `SELECT P.PATID, P.PATNAME, P.CHARTNO, S.SCHID, M.MRID, M.CONSULTTIME, E.EMPLID, E.EMPLNAME
+        name: QUERY_TYPE.CONSULTTIME_MISMATCH,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, S.SCHDATE, M.CONSULTTIME, E.EMPLNAME, P.PATID, S.SCHID, M.MRID, E.EMPLID
                 FROM {dbName}.TSCHEDULE S 
                 JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
                 JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
@@ -91,7 +98,10 @@ export class ScheduleDetectorService {
     console.log(`\n=== ${queryName} 결과 (${rows.length}건) ===`);
     for (const row of rows) {
       const fields = Object.entries(row)
-        .map(([key, value]) => `${key}: ${value}`)
+        .map(([key, value]) => {
+          const koreanKey = FIELD_NAME_MAPPING[key] || key;
+          return `${koreanKey}: ${value}`;
+        })
         .join(', ');
       console.log(fields);
     }
@@ -148,6 +158,8 @@ export class ScheduleDetectorService {
   }
 
   async run(): Promise<void> {
+    let excelFilePath = '';
+    
     try {
       await this.dbService.initializePools(config.databases);
       
@@ -177,14 +189,32 @@ export class ScheduleDetectorService {
       // Excel 파일 생성 (활성화된 경우)
       if (config.excel.enabled && allResults.some(r => r.count > 0)) {
         try {
-          await this.excelService.exportAllResults(allResults);
+          excelFilePath = await this.excelService.exportAllResults(allResults);
         } catch (error) {
           console.error('Excel 파일 생성 중 오류 발생:', (error as Error).message);
+        }
+      }
+
+      // Slack 알림 전송 (활성화된 경우)
+      if (config.slack.enabled) {
+        try {
+          await this.slackService.sendDetectionResults(allResults, excelFilePath);
+        } catch (error) {
+          console.error('Slack 알림 전송 중 오류 발생:', (error as Error).message);
         }
       }
       
     } catch (error) {
       console.error('배치 처리 실패:', error);
+      
+      // 에러 발생 시 Slack 알림
+      if (config.slack.enabled) {
+        try {
+          await this.slackService.sendErrorMessage(error as Error);
+        } catch (slackError) {
+          console.error('Slack 에러 알림 전송 실패:', (slackError as Error).message);
+        }
+      }
     } finally {
       await this.dbService.closePools();
     }
@@ -264,11 +294,5 @@ export class ScheduleDetectorService {
     }
 
     return await this.excelService.exportAllResults(results);
-  }
-
-  // 특정 쿼리 결과만 Excel로 내보내기
-  async exportSpecificQueryToExcel(queryName: string): Promise<string> {
-    const results = await this.runSpecificDetection(queryName);
-    return await this.excelService.exportSingleQuery(results, queryName);
   }
 }

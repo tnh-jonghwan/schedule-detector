@@ -23,6 +23,15 @@ export interface Config {
     includeTimestamp: boolean;
     separateSheets: boolean;
   };
+  slack: {
+    enabled: boolean;
+    token: string;
+    channel: string;
+    clientId: string;
+    clientSecret: string;
+    signingSecret: string;
+    verificationToken: string;
+  };
 }
 
 dotenv.config();
@@ -59,6 +68,15 @@ const config: Config = {
     outputDir: process.env.EXCEL_OUTPUT_DIR || './exports',
     includeTimestamp: process.env.EXCEL_INCLUDE_TIMESTAMP !== 'false',
     separateSheets: process.env.EXCEL_SEPARATE_SHEETS !== 'false'
+  },
+  slack: {
+    enabled: process.env.SLACK_ENABLED === 'true',
+    token: process.env.SLACK_BOT_TOKEN || '',
+    channel: process.env.SLACK_CHANNEL || '',
+    clientId: process.env.SLACK_CLIENT_ID || '2863310822469.9322807165974',
+    clientSecret: process.env.SLACK_CLIENT_SECRET || 'a13cf836bb302cdd65f16dd8bbf2abf7',
+    signingSecret: process.env.SLACK_SIGNING_SECRET || '20afecb9d86c1ea0f4d3adc21ce59d33',
+    verificationToken: process.env.SLACK_VERIFICATION_TOKEN || 'mCksmCkxgs51pTJGqwnat7Ub'
   }
 };
 

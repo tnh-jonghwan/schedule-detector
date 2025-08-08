@@ -75,7 +75,7 @@ export interface HospitalInfo {
 export const HospitalMap: Record<string, HospitalInfo> = {
   'amelia': {
     dbName: 'amelia',
-    hospitalName: '아멜리아'
+    hospitalName: '테스트 서버'
   },
   'c00052': {
     dbName: 'c00052',
@@ -137,4 +137,40 @@ export const HospitalMap: Record<string, HospitalInfo> = {
     dbName: 'c00085',
     hospitalName: '한가온'
   }
+}
+
+export enum QUERY_TYPE {
+  VISITTYPE_MISMATCH = 'VISITTYPE_MISMATCH',
+  INSURANCE_MISMATCH = 'INSURANCE_MISMATCH',
+  DOCTOR_MISMATCH = 'DOCTOR_MISMATCH',
+  CONSULTTIME_MISMATCH = 'CONSULTTIME_MISMATCH'
+}
+
+export const QUERY_TYPE_INFO = {
+  [QUERY_TYPE.VISITTYPE_MISMATCH] : {
+      description: '주스케줄 진료구분이 초진, 재진 재초진이 아닌 경우',                                                      
+      excelSheetName: '주스케줄 진료구분 오류'   
+  },
+  [QUERY_TYPE.INSURANCE_MISMATCH]: {
+      description: '환자의 자격조회 데이터 매칭이 안되는 경우',
+      excelSheetName: '자격조회 환자 매칭 오류'
+  },
+  [QUERY_TYPE.DOCTOR_MISMATCH]: {
+      description: '스케줄의 담당의와 차트의 담당의가 매칭이 안되는 경우',
+      excelSheetName: '담당의 매칭 오류'
+  },
+  [QUERY_TYPE.CONSULTTIME_MISMATCH]: {
+      description: '외래에서 스케줄 날짜와 차트 날짜가 다른 경우',
+      excelSheetName: '스케줄, 차트 날짜 불일치 오류'
+  }
+}
+
+// 필드명 한국어 매핑
+export const FIELD_NAME_MAPPING: Record<string, string> = {
+  'PATNAME': '환자명',
+  'CHARTNO': '차트번호', 
+  'CONSULTTIME': '진료날짜',
+  'SCHDATE': '스케줄날짜',
+  'EMPLNAME': '담당의',
+  'VISITTYPE': '진료구분',
 }
