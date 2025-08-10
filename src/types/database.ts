@@ -79,63 +79,63 @@ export const HospitalMap: Record<string, HospitalInfo> = {
   },
   'c00052': {
     dbName: 'c00052',
-    hospitalName: '당당'
+    hospitalName: '당당52'
   },
   'c00053': {
     dbName: 'c00053',
-    hospitalName: '리봄(강남)'
+    hospitalName: '리봄(강남)53'
   },
   'c00054': {
     dbName: 'c00054',
-    hospitalName: '광덕'
+    hospitalName: '광덕54'
   },
   'c00055': {
     dbName: 'c00055',
-    hospitalName: '리봄(대구)'
+    hospitalName: '리봄(대구)55'
   },
   'c00057': {
     dbName: 'c00057',
-    hospitalName: '메타'
+    hospitalName: '메타57'
   },
   'c00066': {
     dbName: 'c00066',
-    hospitalName: '새로본'
+    hospitalName: '새로본66'
   },
   'c00068': {
     dbName: 'c00068',
-    hospitalName: '라라'
+    hospitalName: '라라68'
   },
   'c00071': {
     dbName: 'c00071',
-    hospitalName: '소담'
+    hospitalName: '소담71'
   },
   'c00072': {
     dbName: 'c00072',
-    hospitalName: '경기서부한의사랑'
+    hospitalName: '경기서부한의사랑72'
   },
   'c00076': {
     dbName: 'c00076',
-    hospitalName: '원흥'
+    hospitalName: '원흥76'
   },
   'c00078': {
     dbName: 'c00078',
-    hospitalName: '광덕(부산하단)'
+    hospitalName: '광덕(부산하단)78'
   },
   'c00082': {
     dbName: 'c00082',
-    hospitalName: '당당(대구달서)'
+    hospitalName: '당당(대구달서)82'
   },
   'c00083': {
     dbName: 'c00083',
-    hospitalName: '연산당당한방병원'
+    hospitalName: '연산당당한방병원83'
   },
   'c00084': {
     dbName: 'c00084',
-    hospitalName: '청아람한방병원'
+    hospitalName: '청아람한방병원84'
   },
   'c00085': {
     dbName: 'c00085',
-    hospitalName: '한가온'
+    hospitalName: '한가온85'
   }
 }
 
