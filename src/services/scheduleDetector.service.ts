@@ -65,17 +65,6 @@ export class ScheduleDetectorService {
         enabled: true
       },
       {
-        name: QUERY_TYPE.DUPLICATE_MAINSCHEDULE,
-        description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].description,
-        query: `SELECT P.PATNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID, A.SCHDATE AS A_SCHDATE, B.SCHDATE AS B_SCHDATE, A.SCHDRID AS A_SCHDRID, B.SCHDRID AS B_SCHDRID, A.INSTYPE AS A_INSTYPE, B.INSTYPE AS B_INSTYPE, A.VISITTYPE AS A_VISITTYPE, B.VISITTYPE AS B_VISITTYPE
-                FROM {dbName}.TSCHEDULE A
-                JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
-                JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
-                WHERE A.SCHTYPE = 2
-                AND A.SCHDATE >= ?`,
-        enabled: true
-      },
-      {
         name: QUERY_TYPE.CONSULTTIME_MISMATCH,
         description: QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].description,
         query: `SELECT P.PATNAME, P.CHARTNO, S.SCHDATE, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, E.EMPLNAME, P.PATID, S.SCHID, M.MRID, E.EMPLID
@@ -87,7 +76,40 @@ export class ScheduleDetectorService {
                 AND S.SCHDATE >= ?
                 AND S.SCHDATE != SUBSTR(M.CONSULTTIME, 1, 8)`,
         enabled: true
-      }
+      },
+      {
+        name: QUERY_TYPE.DUPLICATE_MAINSCHEDULE,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].description,
+        query: `SELECT P.PATNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID, A.SCHDATE AS A_SCHDATE, B.SCHDATE AS B_SCHDATE, A.SCHDRID AS A_SCHDRID, B.SCHDRID AS B_SCHDRID, A.INSTYPE AS A_INSTYPE, B.INSTYPE AS B_INSTYPE, A.VISITTYPE AS A_VISITTYPE, B.VISITTYPE AS B_VISITTYPE
+                FROM {dbName}.TSCHEDULE A
+                JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
+                JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
+                WHERE A.SCHTYPE = 2
+                AND A.SCHDATE >= ?`,
+        enabled: true
+      },
+      // {
+      //   name: QUERY_TYPE.SCHEDULE_TWIST,
+      //   description: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].description,
+      //   query: `WITH diff_log AS (
+      //               SELECT
+      //                   R.MRID,
+      //                   R.SCHID,
+      //                   R.EMPLID,
+      //                   R.CONSULTTIME,
+      //                   LAG(R.SCHID)  OVER (PARTITION BY R.MRID ORDER BY R.CONSULTTIME) AS prev_schid,
+      //                   LAG(R.EMPLID) OVER (PARTITION BY R.MRID ORDER BY R.CONSULTTIME) AS prev_emplid
+      //               FROM {dbName}.TRECORDCHGLOG R
+      //           )
+      //           SELECT D.*
+      //           FROM diff_log D
+      //           JOIN {dbName}.TSCHEDULE S
+      //               ON D.SCHID = S.SCHID
+      //           WHERE (D.prev_schid IS NOT NULL AND D.SCHID  <> D.prev_schid)
+      //             AND S.SCHTYPE = 2
+      //             AND D.CONSULTTIME >= ?`,
+      //   enabled: true
+      // }
     ];
   }
 

@@ -143,7 +143,8 @@ export enum QUERY_TYPE {
   VISITTYPE_MISMATCH = 'VISITTYPE_MISMATCH',
   INSURANCE_MISMATCH = 'INSURANCE_MISMATCH',
   DUPLICATE_MAINSCHEDULE = 'DUPLICATE_MAINSCHEDULE',
-  CONSULTTIME_MISMATCH = 'CONSULTTIME_MISMATCH'
+  CONSULTTIME_MISMATCH = 'CONSULTTIME_MISMATCH',
+  SCHEDULE_TWIST = 'SCHEDULE_TWIST'
 }
 
 export const QUERY_TYPE_INFO = {
@@ -162,6 +163,10 @@ export const QUERY_TYPE_INFO = {
   [QUERY_TYPE.CONSULTTIME_MISMATCH]: {
       description: '외래에서 스케줄 날짜와 차트 날짜가 다른 경우',
       excelSheetName: '스케줄, 차트 날짜 불일치 오류'
+  },
+  [QUERY_TYPE.SCHEDULE_TWIST]: {
+      description: '입원 차트에서 차트 저장 시 스케줄이 달라지는 경우',
+      excelSheetName: '차트 저장 시 스케줄이 달라지는 오류'
   }
 }
 

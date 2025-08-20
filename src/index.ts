@@ -27,7 +27,6 @@ async function main(): Promise<void> {
   console.log(`스케줄: 오전 9시, 오후 2시 (한국 시간)`);
   console.log(`한 번만 실행: ${config.scheduler.runOnce ? '예' : '아니오'}\n`);
   
-  console.log(config);
   // 한 번만 실행하는 경우
   if (config.scheduler.runOnce) {
     console.log('한 번만 실행 모드로 실행 후 종료합니다.');
