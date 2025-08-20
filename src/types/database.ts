@@ -142,7 +142,7 @@ export const HospitalMap: Record<string, HospitalInfo> = {
 export enum QUERY_TYPE {
   VISITTYPE_MISMATCH = 'VISITTYPE_MISMATCH',
   INSURANCE_MISMATCH = 'INSURANCE_MISMATCH',
-  DOCTOR_MISMATCH = 'DOCTOR_MISMATCH',
+  DUPLICATE_MAINSCHEDULE = 'DUPLICATE_MAINSCHEDULE',
   CONSULTTIME_MISMATCH = 'CONSULTTIME_MISMATCH'
 }
 
@@ -155,9 +155,9 @@ export const QUERY_TYPE_INFO = {
       description: '환자의 자격조회 데이터 매칭이 안되는 경우',
       excelSheetName: '자격조회 환자 매칭 오류'
   },
-  [QUERY_TYPE.DOCTOR_MISMATCH]: {
-      description: '스케줄의 담당의와 차트의 담당의가 매칭이 안되는 경우',
-      excelSheetName: '담당의 매칭 오류'
+  [QUERY_TYPE.DUPLICATE_MAINSCHEDULE]: {
+      description: '입원 주 스케줄이 중복된 경우',
+      excelSheetName: '주스케줄 중복 오류'
   },
   [QUERY_TYPE.CONSULTTIME_MISMATCH]: {
       description: '외래에서 스케줄 날짜와 차트 날짜가 다른 경우',
@@ -169,7 +169,7 @@ export const QUERY_TYPE_INFO = {
 export const FIELD_NAME_MAPPING: Record<string, string> = {
   'PATNAME': '환자명',
   'CHARTNO': '차트번호', 
-  'CONSULTTIME': '진료날짜',
+  'CONSULTDATE': '진료날짜',
   'SCHDATE': '스케줄날짜',
   'EMPLNAME': '담당의',
   'VISITTYPE': '진료구분',
