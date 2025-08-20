@@ -31,7 +31,6 @@ The project follows a service-based architecture where database operations are s
 Environment variables control database connections and behavior:
 - `DATABASES` - JSON array of database configurations with host/port
 - `MAIN_USER`, `MAIN_PASSWORD` - Database credentials  
-- `RUN_INTERVAL_HOURS` - Scheduling interval (default: 1 hour)
 - `RUN_ONCE` - Set to 'true' for single execution mode
 - `BATCH_SIZE` - Query batch size (default: 100)
 
