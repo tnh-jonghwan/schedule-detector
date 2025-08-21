@@ -80,10 +80,10 @@ export class ScheduleDetectorService {
       {
         name: QUERY_TYPE.DUPLICATE_MAINSCHEDULE,
         description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, P.PATID, A.SCHDATE, E.EMPLNAME, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
+        query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
                 FROM {dbName}.TSCHEDULE A
                 JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
-                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = M.DRID
+                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
                 WHERE A.SCHTYPE = 2
                 AND A.SCHDATE >= ?`,
@@ -95,6 +95,7 @@ export class ScheduleDetectorService {
         query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, R.MRID, S.SCHID
                 FROM {dbName}.TSCHEDULE S
                 JOIN {dbName}.TPATIENT P
+                    ON P.PATID = S.PATID
                 JOIN {dbName}.TMEDICALRECORD M 
                     ON S.SCHID = M.SCHID 
                 JOIN {dbName}.TRECORDCHGLOG R 
