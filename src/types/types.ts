@@ -145,7 +145,8 @@ export enum QUERY_TYPE {
   DUPLICATE_MAINSCHEDULE = 'DUPLICATE_MAINSCHEDULE',
   CONSULTTIME_MISMATCH = 'CONSULTTIME_MISMATCH',
   SCHEDULE_TWIST = 'SCHEDULE_TWIST',
-  DUPLICATE_MEAL = 'DUPLICATE_MEAL'
+  DUPLICATE_MEAL = 'DUPLICATE_MEAL',
+  SCHEDULE_VISITTYPE_MISMATCH = 'SCHEDULE_VISITTYPE_MISMATCH'
 }
 
 export const QUERY_TYPE_INFO = {
@@ -172,7 +173,12 @@ export const QUERY_TYPE_INFO = {
   [QUERY_TYPE.DUPLICATE_MEAL]: {
     description: '입원 차트에서 중복 식이가 존재하는 경우',
     excelSheetName: '중복 식이 오류'
+  },
+  [QUERY_TYPE.SCHEDULE_VISITTYPE_MISMATCH]: {
+    description: '입원 주 스케줄의 진료구분이 협진인 경우',
+    excelSheetName: '입원 주 스케줄 진료구분 오류'
   }
+
 }
 
 // 필드명 한국어 매핑

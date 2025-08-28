@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DetectionResult, DetectionRow, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO, FIELD_NAME_MAPPING } from '../types/database.js';
+import { DetectionResult, DetectionRow, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO, FIELD_NAME_MAPPING } from '../types/types.js';
 
 export interface ExcelExportOptions {
   outputDir?: string;

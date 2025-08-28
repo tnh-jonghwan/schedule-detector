@@ -1,7 +1,7 @@
 import { WebClient } from '@slack/web-api';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DetectionResult, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO } from '../types/database.js';
+import { DetectionResult, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO } from '../types/types.js';
 
 export interface SlackConfig {
   token: string;

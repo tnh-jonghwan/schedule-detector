@@ -2,16 +2,16 @@ import config from '../config.js';
 import { DatabaseService } from './database.service.js';
 import { ExcelService } from './excel.service.js';
 import { SlackService } from './slack.service.js';
-import { 
-  DatabaseInfo, 
-  DetectionQuery, 
-  DetectionResult, 
+import {
+  DatabaseInfo,
+  DetectionQuery,
+  DetectionResult,
   DetectionRow,
   HospitalMap,
   QUERY_TYPE,
   QUERY_TYPE_INFO,
-  FIELD_NAME_MAPPING
-} from '../types/database.js';
+  FIELD_NAME_MAPPING,
+} from '../types/types.js';
 
 export class ScheduleDetectorService {
   private dbService: DatabaseService;
@@ -25,14 +25,14 @@ export class ScheduleDetectorService {
     this.excelService = new ExcelService({
       outputDir: config.excel.outputDir,
       includeTimestamp: config.excel.includeTimestamp,
-      separateSheets: config.excel.separateSheets
+      separateSheets: config.excel.separateSheets,
     });
     this.slackService = new SlackService({
       enabled: config.slack.enabled,
       token: config.slack.token,
-      channel: config.slack.channel
+      channel: config.slack.channel,
     });
-    this.startDate = "20250501";
+    this.startDate = '20250501';
     this.detectionQueries = this.initializeDetectionQueries();
   }
 
@@ -50,7 +50,7 @@ export class ScheduleDetectorService {
                 AND S.SCHTYPE = 2
                 AND S.VISITTYPE NOT IN (0,1,2,3)
                 AND S.SCHDATE >= ?`,
-        enabled: true
+        enabled: true,
       },
       {
         name: QUERY_TYPE.INSURANCE_MISMATCH,
@@ -62,11 +62,12 @@ export class ScheduleDetectorService {
                 JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
                 WHERE S.PATID != H.PATID
                 AND S.SCHDATE >= ?`,
-        enabled: true
+        enabled: true,
       },
       {
         name: QUERY_TYPE.CONSULTTIME_MISMATCH,
-        description: QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].description,
+        description:
+          QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].description,
         query: `SELECT P.PATNAME, P.CHARTNO, S.SCHDATE, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, E.EMPLNAME, P.PATID, S.SCHID, M.MRID, E.EMPLID
                 FROM {dbName}.TSCHEDULE S 
                 JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
@@ -75,11 +76,12 @@ export class ScheduleDetectorService {
                 WHERE S.SCHTYPE = 1
                 AND S.SCHDATE >= ?
                 AND S.SCHDATE != SUBSTR(M.CONSULTTIME, 1, 8)`,
-        enabled: true
+        enabled: true,
       },
       {
         name: QUERY_TYPE.DUPLICATE_MAINSCHEDULE,
-        description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].description,
+        description:
+          QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].description,
         query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
                 FROM {dbName}.TSCHEDULE A
                 JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
@@ -87,7 +89,7 @@ export class ScheduleDetectorService {
                 JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
                 WHERE A.SCHTYPE = 2
                 AND A.SCHDATE >= ?`,
-        enabled: true
+        enabled: true,
       },
       {
         name: QUERY_TYPE.SCHEDULE_TWIST,
@@ -104,7 +106,7 @@ export class ScheduleDetectorService {
                   AND S.SCHTYPE = 2
                 GROUP BY R.MRID, S.SCHID
                 HAVING SUM(R.SCHID) % S.SCHID <> 0;`,
-        enabled: true
+        enabled: true,
       },
       {
         name: QUERY_TYPE.DUPLICATE_MEAL,
@@ -119,8 +121,23 @@ export class ScheduleDetectorService {
                 AND I.CATNO IN ("20001001", "20002001", "41003001", "51003001")
                 GROUP BY M.MRID, I.CATNO, I.ITEMCODE
                 HAVING COUNT(*) >= 2;`,
-        enabled: true
-      }
+        enabled: true,
+      },
+      {
+        name: QUERY_TYPE.SCHEDULE_VISITTYPE_MISMATCH,
+        description:
+          QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_VISITTYPE_MISMATCH].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, E.EMPLNAME, S.SCHDATE, S.SCHID, S.SCHDRID
+                FROM {dbName}.TSCHEDULE S
+                JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
+                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = S.SCHDRID
+                WHERE S.SCHTYPE = 2
+                AND S.SCHDATE >= ?
+                AND S.ORGSCHID = 0 
+                AND S.VISITTYPE IN (5, 6) 
+                AND S.MIG = 0`,
+        enabled: true,
+      },
     ];
   }
 
@@ -138,75 +155,98 @@ export class ScheduleDetectorService {
   }
 
   private async executeDetectionQuery(
-    dbRoute: string, 
-    dbName: string, 
+    dbRoute: string,
+    dbName: string,
     detectionQuery: DetectionQuery
   ): Promise<DetectionResult> {
     const query = detectionQuery.query.replace(/{dbName}/g, dbName);
-    
+
     try {
-      const rows = await this.dbService.executeQuery<DetectionRow>(dbRoute, query, [this.startDate]);
-      
+      const rows = await this.dbService.executeQuery<DetectionRow>(
+        dbRoute,
+        query,
+        [this.startDate]
+      );
+
       const result: DetectionResult = {
         queryName: detectionQuery.name,
         dbRoute,
         dbName,
         rows,
-        count: rows.length
+        count: rows.length,
       };
 
       if (rows.length > 0) {
-        this.logResults(detectionQuery.description, rows.map(row => ({ DBNAME: dbName, HOSNAME: HospitalMap[dbName].hospitalName, ...row })));
+        this.logResults(
+          detectionQuery.description,
+          rows.map(row => ({
+            DBNAME: dbName,
+            HOSNAME: HospitalMap[dbName].hospitalName,
+            ...row,
+          }))
+        );
       }
 
       return result;
     } catch (error) {
-      console.error(`${detectionQuery.name} 쿼리 실행 에러 (${dbRoute} - ${dbName}):`, (error as Error).message);
+      console.error(
+        `${detectionQuery.name} 쿼리 실행 에러 (${dbRoute} - ${dbName}):`,
+        (error as Error).message
+      );
       return {
         queryName: detectionQuery.name,
         dbRoute,
         dbName,
         rows: [],
-        count: 0
+        count: 0,
       };
     }
   }
 
-  private async runDetectionForDatabase(dbRoute: string, dbName: string): Promise<DetectionResult[]> {
+  private async runDetectionForDatabase(
+    dbRoute: string,
+    dbName: string
+  ): Promise<DetectionResult[]> {
     const results: DetectionResult[] = [];
-    
+
     console.log(`\n데이터베이스 처리 중: ${dbRoute} - ${dbName}`);
-    
+
     for (const query of this.detectionQueries) {
       if (query.enabled) {
         const result = await this.executeDetectionQuery(dbRoute, dbName, query);
         results.push(result);
       }
     }
-    
+
     return results;
   }
 
   async run(): Promise<void> {
     let excelFilePath = '';
-    
+
     try {
       await this.dbService.initializePools(config.databases);
-      
+
       if (this.dbService.getPoolsSize() === 0) {
         console.log('사용 가능한 데이터베이스 연결이 없습니다. 종료합니다...');
         return;
       }
 
       const allResults: DetectionResult[] = [];
-     
+
       for (const dbRoute of this.dbService.getPoolRoutes()) {
-        const databases = await this.dbService.executeQuery<DatabaseInfo>(dbRoute, 'SHOW DATABASES');
+        const databases = await this.dbService.executeQuery<DatabaseInfo>(
+          dbRoute,
+          'SHOW DATABASES'
+        );
 
         for (const database of databases) {
           const dbName = database.Database;
-          
-          if (dbName === 'amelia' || (dbName.length === 6 && dbName.substring(0, 1) === 'c')) {
+
+          if (
+            dbName === 'amelia' ||
+            (dbName.length === 6 && dbName.substring(0, 1) === 'c')
+          ) {
             const results = await this.runDetectionForDatabase(dbRoute, dbName);
             allResults.push(...results);
           }
@@ -221,28 +261,39 @@ export class ScheduleDetectorService {
         try {
           excelFilePath = await this.excelService.exportAllResults(allResults);
         } catch (error) {
-          console.error('Excel 파일 생성 중 오류 발생:', (error as Error).message);
+          console.error(
+            'Excel 파일 생성 중 오류 발생:',
+            (error as Error).message
+          );
         }
       }
 
       // Slack 알림 전송 (활성화된 경우)
       if (config.slack.enabled) {
         try {
-          await this.slackService.sendDetectionResults(allResults, excelFilePath);
+          await this.slackService.sendDetectionResults(
+            allResults,
+            excelFilePath
+          );
         } catch (error) {
-          console.error('Slack 알림 전송 중 오류 발생:', (error as Error).message);
+          console.error(
+            'Slack 알림 전송 중 오류 발생:',
+            (error as Error).message
+          );
         }
       }
-      
     } catch (error) {
       console.error('배치 처리 실패:', error);
-      
+
       // 에러 발생 시 Slack 알림
       if (config.slack.enabled) {
         try {
           await this.slackService.sendErrorMessage(error as Error);
         } catch (slackError) {
-          console.error('Slack 에러 알림 전송 실패:', (slackError as Error).message);
+          console.error(
+            'Slack 에러 알림 전송 실패:',
+            (slackError as Error).message
+          );
         }
       }
     } finally {
@@ -252,7 +303,7 @@ export class ScheduleDetectorService {
 
   private printSummary(results: DetectionResult[]): void {
     console.log('\n=== 감지 결과 요약 ===');
-    
+
     const summary = new Map<string, number>();
     let totalCount = 0;
 
@@ -286,13 +337,23 @@ export class ScheduleDetectorService {
 
     try {
       for (const dbRoute of this.dbService.getPoolRoutes()) {
-        const databases = await this.dbService.executeQuery<DatabaseInfo>(dbRoute, 'SHOW DATABASES');
+        const databases = await this.dbService.executeQuery<DatabaseInfo>(
+          dbRoute,
+          'SHOW DATABASES'
+        );
 
         for (const database of databases) {
           const dbName = database.Database;
-          
-          if (dbName === 'amelia' || (dbName.length === 6 && dbName.substring(0, 1) === 'c')) {
-            const result = await this.executeDetectionQuery(dbRoute, dbName, query);
+
+          if (
+            dbName === 'amelia' ||
+            (dbName.length === 6 && dbName.substring(0, 1) === 'c')
+          ) {
+            const result = await this.executeDetectionQuery(
+              dbRoute,
+              dbName,
+              query
+            );
             results.push(result);
           }
         }
