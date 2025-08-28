@@ -144,7 +144,8 @@ export enum QUERY_TYPE {
   INSURANCE_MISMATCH = 'INSURANCE_MISMATCH',
   DUPLICATE_MAINSCHEDULE = 'DUPLICATE_MAINSCHEDULE',
   CONSULTTIME_MISMATCH = 'CONSULTTIME_MISMATCH',
-  SCHEDULE_TWIST = 'SCHEDULE_TWIST'
+  SCHEDULE_TWIST = 'SCHEDULE_TWIST',
+  DUPLICATE_MEAL = 'DUPLICATE_MEAL'
 }
 
 export const QUERY_TYPE_INFO = {
@@ -167,6 +168,10 @@ export const QUERY_TYPE_INFO = {
   [QUERY_TYPE.SCHEDULE_TWIST]: {
       description: '입원 차트에서 차트 저장 시 스케줄이 꼬이는 경우',
       excelSheetName: '차트 저장 시 스케줄이 꼬이는 경우 오류'
+  },
+  [QUERY_TYPE.DUPLICATE_MEAL]: {
+    description: '입원 차트에서 중복 식이가 존재하는 경우',
+    excelSheetName: '중복 식이 오류'
   }
 }
 

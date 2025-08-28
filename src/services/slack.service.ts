@@ -39,22 +39,14 @@ export class SlackService {
     }
 
     if (totalCount === 0) {
-      return '🎉 *메디치스 스케줄 감지 결과*\n\n✅ 감지된 이상 항목이 없습니다.';
+      return '🎉 *메디씨 데이터 불일치 감지 결과*\n\n✅ 감지된 이상 항목이 없습니다.';
     }
 
-    const queryDescriptions: Record<string, string> = {
-      [QUERY_TYPE.VISITTYPE_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.VISITTYPE_MISMATCH].excelSheetName,
-      [QUERY_TYPE.INSURANCE_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.INSURANCE_MISMATCH].excelSheetName,
-      [QUERY_TYPE.DUPLICATE_MAINSCHEDULE]: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].excelSheetName,
-      [QUERY_TYPE.CONSULTTIME_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].excelSheetName,
-      [QUERY_TYPE.SCHEDULE_TWIST]: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].excelSheetName
-    };
-
-    let message = `🚨 *메디치스 스케줄 감지 결과*\n\n`;
+    let message = `🚨 *메디씨 데이터 불일치 감지 결과*\n\n`;
     message += `📊 *총 ${totalCount}건의 이상 항목이 감지되었습니다.*\n\n`;
 
     for (const [queryName, hospitalMap] of summary) {
-      const description = queryDescriptions[queryName] || queryName;
+      const description = QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]?.excelSheetName || queryName;
       message += `*[${description}]*\n`;
       
       for (const [hospitalName, count] of hospitalMap) {
@@ -170,7 +162,7 @@ export class SlackService {
   }
 
   async sendErrorMessage(error: Error): Promise<void> {
-    const message = `❌ *메디치스 스케줄 감지기 오류*\n\n` +
+    const message = `❌ * 메디씨 데이터 불일치 감지 오류*\n\n` +
                    `🚫 오류 메시지: \`${error.message}\`\n` +
                    `⏰ ${new Date().toLocaleString('ko-KR')}`;
     

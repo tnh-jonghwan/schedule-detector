@@ -105,6 +105,21 @@ export class ScheduleDetectorService {
                 GROUP BY R.MRID, S.SCHID
                 HAVING SUM(R.SCHID) % S.SCHID <> 0;`,
         enabled: true
+      },
+      {
+        name: QUERY_TYPE.DUPLICATE_MEAL,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MEAL].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, E.EMPLNAME, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, I.ITEMNAME, COUNT(*) AS CNT, P.PATID, M.MRID
+                FROM {dbName}.TSCHEDULE S
+                JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
+                JOIN {dbName}.TMEDICALITEM I ON I.MRID = M.MRID
+                JOIN {dbName}.TPATIENT P ON P.PATID = M.PATID
+                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = M.DRID
+                WHERE S.SCHDATE >= ?
+                AND I.CATNO IN ("20001001", "20002001", "41003001", "51003001")
+                GROUP BY M.MRID, I.CATNO, I.ITEMCODE
+                HAVING COUNT(*) >= 2;`,
+        enabled: true
       }
     ];
   }

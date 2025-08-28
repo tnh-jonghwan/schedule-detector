@@ -144,15 +144,7 @@ export class ExcelService {
   }
 
   private getQueryDescription(queryName: string): string {
-    const descriptions: Record<string, string> = {
-      [QUERY_TYPE.VISITTYPE_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.VISITTYPE_MISMATCH].excelSheetName,
-      [QUERY_TYPE.INSURANCE_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.INSURANCE_MISMATCH].excelSheetName,
-      [QUERY_TYPE.DUPLICATE_MAINSCHEDULE]: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].excelSheetName,
-      [QUERY_TYPE.CONSULTTIME_MISMATCH]: QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].excelSheetName,
-      [QUERY_TYPE.SCHEDULE_TWIST]: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].excelSheetName
-    };
-    
-    return descriptions[queryName] || queryName;
+    return QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]?.excelSheetName || queryName;
   }
 
 
