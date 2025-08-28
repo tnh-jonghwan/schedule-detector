@@ -9,7 +9,13 @@
     "start": "tsx src/index.ts",
     "dev": "tsx --watch src/index.ts",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop medichis-schedule-detector",
+    "pm2:restart": "pm2 restart medichis-schedule-detector",
+    "pm2:delete": "pm2 delete medichis-schedule-detector",
+    "pm2:logs": "pm2 logs medichis-schedule-detector",
+    "pm2:monitor": "pm2 monit"
   },
   "keywords": [
     "mysql",
