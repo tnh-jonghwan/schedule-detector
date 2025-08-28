@@ -39,20 +39,6 @@ export class ScheduleDetectorService {
   private initializeDetectionQueries(): DetectionQuery[] {
     return [
       {
-        name: QUERY_TYPE.VISITTYPE_MISMATCH,
-        description: QUERY_TYPE_INFO[QUERY_TYPE.VISITTYPE_MISMATCH].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, E.EMPLNAME, P.PATID, S.SCHID, S.VISITTYPE, M.MRID, E.EMPLID
-                FROM {dbName}.TSCHEDULE S
-                JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
-                JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
-                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = M.DRID
-                WHERE S.ORGSCHID = 0 
-                AND S.SCHTYPE = 2
-                AND S.VISITTYPE NOT IN (0,1,2,3)
-                AND S.SCHDATE >= ?`,
-        enabled: true,
-      },
-      {
         name: QUERY_TYPE.INSURANCE_MISMATCH,
         description: QUERY_TYPE_INFO[QUERY_TYPE.INSURANCE_MISMATCH].description,
         query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, H.INSID, P.PATID, S.SCHID, M.MRID
@@ -79,18 +65,30 @@ export class ScheduleDetectorService {
         enabled: true,
       },
       {
-        name: QUERY_TYPE.DUPLICATE_MAINSCHEDULE,
-        description:
-          QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MAINSCHEDULE].description,
+        name: QUERY_TYPE.DUPLICATE_SCHEDULE,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
         query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
                 FROM {dbName}.TSCHEDULE A
-                JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
+                JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID
                 JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
-                WHERE A.SCHTYPE = 2
-                AND A.SCHDATE >= ?`,
+                WHERE A.SCHTYPE = 2 AND B.SCHTYPE = 2 AND (A.SCHSTATUS != 20 AND B.SCHSTATUS != 20)
+                AND A.SCHDATE >= "20250701"`,
         enabled: true,
       },
+
+      // {
+      //   name: QUERY_TYPE.DUPLICATE_SCHEDULE,
+      //   description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
+      //   query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
+      //           FROM {dbName}.TSCHEDULE A
+      //           JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
+      //           JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
+      //           JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID
+      //           WHERE A.SCHTYPE = 2
+      //           AND A.SCHDATE >= ?`,
+      //   enabled: true,
+      // },
       {
         name: QUERY_TYPE.SCHEDULE_TWIST,
         description: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].description,
