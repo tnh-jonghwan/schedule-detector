@@ -47,7 +47,7 @@ export class SlackService {
 
     for (const [queryName, hospitalMap] of summary) {
       const description = QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]?.excelSheetName || queryName;
-      message += `*[${description}]*\n`;
+      message += `*[${description}] - 총 ${[...hospitalMap.values()].reduce((a, b) => a + b, 0)}건*\n`;
       
       for (const [hospitalName, count] of hospitalMap) {
         if (count > 0) {
