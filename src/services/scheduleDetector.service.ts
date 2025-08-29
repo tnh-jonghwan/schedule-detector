@@ -27,12 +27,13 @@ export class ScheduleDetectorService {
       includeTimestamp: config.excel.includeTimestamp,
       separateSheets: config.excel.separateSheets,
     });
+    this.startDate = '20250701';
     this.slackService = new SlackService({
       enabled: config.slack.enabled,
       token: config.slack.token,
       channel: config.slack.channel,
+      startDate: this.startDate,
     });
-    this.startDate = '20250501';
     this.detectionQueries = this.initializeDetectionQueries();
   }
 
@@ -73,7 +74,7 @@ export class ScheduleDetectorService {
                 JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
                 WHERE A.SCHTYPE = 2 AND B.SCHTYPE = 2 AND (A.SCHSTATUS != 20 AND B.SCHSTATUS != 20)
-                AND A.SCHDATE >= "20250701"`,
+                AND A.SCHDATE >= ?`,
         enabled: true,
       },
 
@@ -100,7 +101,7 @@ export class ScheduleDetectorService {
                     ON S.SCHID = M.SCHID 
                 JOIN {dbName}.TRECORDCHGLOG R 
                     ON R.MRID = M.MRID
-                WHERE S.SCHDATE >= ? 
+                WHERE S.SCHDATE >= ?
                   AND S.SCHTYPE = 2
                 GROUP BY R.MRID, S.SCHID
                 HAVING SUM(R.SCHID) % S.SCHID <> 0;`,
@@ -165,6 +166,8 @@ export class ScheduleDetectorService {
         query,
         [this.startDate]
       );
+
+      // 여기
 
       const result: DetectionResult = {
         queryName: detectionQuery.name,
@@ -321,67 +324,5 @@ export class ScheduleDetectorService {
     }
 
     console.log(`\n총 ${totalCount}건 감지되었습니다.`);
-  }
-
-  // 특정 쿼리만 실행하는 메서드
-  async runSpecificDetection(queryName: string): Promise<DetectionResult[]> {
-    const query = this.detectionQueries.find(q => q.name === queryName);
-    if (!query) {
-      throw new Error(`쿼리를 찾을 수 없습니다: ${queryName}`);
-    }
-
-    await this.dbService.initializePools(config.databases);
-    const results: DetectionResult[] = [];
-
-    try {
-      for (const dbRoute of this.dbService.getPoolRoutes()) {
-        const databases = await this.dbService.executeQuery<DatabaseInfo>(
-          dbRoute,
-          'SHOW DATABASES'
-        );
-
-        for (const database of databases) {
-          const dbName = database.Database;
-
-          if (
-            dbName === 'amelia' ||
-            (dbName.length === 6 && dbName.substring(0, 1) === 'c')
-          ) {
-            const result = await this.executeDetectionQuery(
-              dbRoute,
-              dbName,
-              query
-            );
-            results.push(result);
-          }
-        }
-      }
-    } finally {
-      await this.dbService.closePools();
-    }
-
-    return results;
-  }
-
-  // 쿼리 활성화/비활성화
-  setQueryEnabled(queryName: string, enabled: boolean): void {
-    const query = this.detectionQueries.find(q => q.name === queryName);
-    if (query) {
-      query.enabled = enabled;
-    }
-  }
-
-  // 사용 가능한 쿼리 목록
-  getAvailableQueries(): DetectionQuery[] {
-    return [...this.detectionQueries];
-  }
-
-  // Excel 파일 수동 생성
-  async exportToExcel(results: DetectionResult[]): Promise<string> {
-    if (!results || results.length === 0) {
-      throw new Error('결과 데이터가 없습니다. 먼저 감지를 실행하세요.');
-    }
-
-    return await this.excelService.exportAllResults(results);
   }
 }

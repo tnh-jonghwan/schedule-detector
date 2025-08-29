@@ -1,7 +1,14 @@
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DetectionResult, DetectionRow, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO, FIELD_NAME_MAPPING } from '../types/types.js';
+import {
+  DetectionResult,
+  DetectionRow,
+  HospitalMap,
+  QUERY_TYPE,
+  QUERY_TYPE_INFO,
+  FIELD_NAME_MAPPING,
+} from '../types/types.js';
 
 export interface ExcelExportOptions {
   outputDir?: string;
@@ -13,7 +20,7 @@ export class ExcelService {
   private defaultOptions: Required<ExcelExportOptions> = {
     outputDir: './exports',
     includeTimestamp: true,
-    separateSheets: true
+    separateSheets: true,
   };
 
   constructor(private options: ExcelExportOptions = {}) {
@@ -30,53 +37,56 @@ export class ExcelService {
     if (this.options.includeTimestamp) {
       const now = new Date();
       // 한국 시간으로 변환 (UTC+9)
-      const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-      
+      const koreaTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+
       const year = koreaTime.getUTCFullYear();
       const month = String(koreaTime.getUTCMonth() + 1).padStart(2, '0');
       const day = String(koreaTime.getUTCDate()).padStart(2, '0');
       const hour = String(koreaTime.getUTCHours()).padStart(2, '0');
       const minute = String(koreaTime.getUTCMinutes()).padStart(2, '0');
-      
+
       const timestamp = `_${year}${month}${day}_${hour}${minute}`;
       return `${baseName}${timestamp}.xlsx`;
     }
-    
+
     return `${baseName}.xlsx`;
   }
 
-  private formatRowForExcel(row: DetectionRow, dbName: string): Record<string, any> {
+  private formatRowForExcel(
+    row: DetectionRow,
+    dbName: string
+  ): Record<string, any> {
     const hospitalName = HospitalMap[dbName]?.hospitalName || '알 수 없는 병원';
-    
+
     // 필드명을 한국어로 변환
     const koreanRow: Record<string, any> = {};
     for (const [key, value] of Object.entries(row)) {
       const koreanKey = FIELD_NAME_MAPPING[key] || key;
       koreanRow[koreanKey] = value;
     }
-    
+
     return {
-      '병원코드': dbName,
-      '병원명': hospitalName,
-      ...koreanRow
+      병원코드: dbName,
+      병원명: hospitalName,
+      ...koreanRow,
     };
   }
 
   async exportAllResults(allResults: DetectionResult[]): Promise<string> {
     this.ensureOutputDir();
-    
+
     const workbook = XLSX.utils.book_new();
-    
+
     if (this.options.separateSheets) {
       // 각 쿼리별로 별도 시트 생성
       const queryResults = this.groupResultsByQuery(allResults);
-      
+
       for (const [queryName, results] of queryResults) {
         const allRows: Record<string, any>[] = [];
-        
+
         for (const result of results) {
           if (result.count > 0) {
-            const formattedRows = result.rows.map(row => 
+            const formattedRows = result.rows.map(row =>
               this.formatRowForExcel(row, result.dbName)
             );
             allRows.push(...formattedRows);
@@ -85,10 +95,10 @@ export class ExcelService {
 
         if (allRows.length > 0) {
           const worksheet = XLSX.utils.json_to_sheet(allRows);
-          
+
           const colWidths = this.calculateColumnWidths(allRows);
           worksheet['!cols'] = colWidths;
-          
+
           // 시트명을 한국어로 변환
           const sheetName = this.getQueryDescription(queryName);
           XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
@@ -97,10 +107,10 @@ export class ExcelService {
     } else {
       // 모든 결과를 하나의 시트에
       const allRows: Record<string, any>[] = [];
-      
+
       for (const result of allResults) {
         if (result.count > 0) {
-          const formattedRows = result.rows.map(row => 
+          const formattedRows = result.rows.map(row =>
             this.formatRowForExcel(row, result.dbName)
           );
           allRows.push(...formattedRows);
@@ -109,16 +119,13 @@ export class ExcelService {
 
       if (allRows.length > 0) {
         const worksheet = XLSX.utils.json_to_sheet(allRows);
-        
+
         const colWidths = this.calculateColumnWidths(allRows);
         worksheet['!cols'] = colWidths;
-        
+
         XLSX.utils.book_append_sheet(workbook, worksheet, '전체결과');
       }
     }
-
-    // 요약 시트 추가
-    this.addSummarySheet(workbook, allResults);
 
     // 파일 저장
     const fileName = this.generateFileName('스케줄 감지');
@@ -130,82 +137,46 @@ export class ExcelService {
     return filePath;
   }
 
-  private groupResultsByQuery(results: DetectionResult[]): Map<string, DetectionResult[]> {
+  private groupResultsByQuery(
+    results: DetectionResult[]
+  ): Map<string, DetectionResult[]> {
     const grouped = new Map<string, DetectionResult[]>();
-    
+
     for (const result of results) {
       if (!grouped.has(result.queryName)) {
         grouped.set(result.queryName, []);
       }
       grouped.get(result.queryName)!.push(result);
     }
-    
+
     return grouped;
   }
 
   private getQueryDescription(queryName: string): string {
-    return QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]?.excelSheetName || queryName;
-  }
-
-
-  private addSummarySheet(workbook: XLSX.WorkBook, allResults: DetectionResult[]): void {
-    const summary = new Map<string, Map<string, number>>();
-    
-    // 쿼리별, 병원별 집계
-    for (const result of allResults) {
-      if (!summary.has(result.queryName)) {
-        summary.set(result.queryName, new Map());
-      }
-      
-      const hospitalName = HospitalMap[result.dbName]?.hospitalName || '알 수 없는 병원';
-      const queryMap = summary.get(result.queryName)!;
-      queryMap.set(hospitalName, (queryMap.get(hospitalName) || 0) + result.count);
-    }
-
-    const summaryRows: Record<string, any>[] = [];
-    
-    for (const [queryName, hospitalMap] of summary) {
-      const queryDescription = this.getQueryDescription(queryName);
-      
-      for (const [hospitalName, count] of hospitalMap) {
-        if (count > 0) {
-          summaryRows.push({
-            '감지유형': queryDescription,
-            '병원명': hospitalName,
-            '건수': count
-          });
-        }
-      }
-    }
-
-    if (summaryRows.length > 0) {
-      const worksheet = XLSX.utils.json_to_sheet(summaryRows);
-      
-      const colWidths = this.calculateColumnWidths(summaryRows);
-      worksheet['!cols'] = colWidths;
-      
-      XLSX.utils.book_append_sheet(workbook, worksheet, '요약');
-    }
+    return (
+      QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]
+        ?.excelSheetName || queryName
+    );
   }
 
   private calculateColumnWidths(data: Record<string, any>[]): XLSX.ColInfo[] {
     if (data.length === 0) return [];
-    
+
     const keys = Object.keys(data[0]);
     const widths: XLSX.ColInfo[] = [];
-    
+
     for (const key of keys) {
       let maxWidth = key.length;
-      
+
       for (const row of data) {
         const cellValue = String(row[key] || '');
         maxWidth = Math.max(maxWidth, cellValue.length);
       }
-      
+
       // 최소 10, 최대 50으로 제한
       widths.push({ width: Math.min(Math.max(maxWidth + 2, 10), 50) });
     }
-    
+
     return widths;
   }
 }

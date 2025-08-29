@@ -1,12 +1,18 @@
 import { WebClient } from '@slack/web-api';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DetectionResult, HospitalMap, QUERY_TYPE, QUERY_TYPE_INFO } from '../types/types.js';
+import {
+  DetectionResult,
+  HospitalMap,
+  QUERY_TYPE,
+  QUERY_TYPE_INFO,
+} from '../types/types.js';
 
 export interface SlackConfig {
   token: string;
   channel: string;
   enabled: boolean;
+  startDate: string;
 }
 
 export class SlackService {
@@ -30,10 +36,15 @@ export class SlackService {
         if (!summary.has(result.queryName)) {
           summary.set(result.queryName, new Map());
         }
-        
-        const hospitalName = HospitalMap[result.dbName]?.hospitalName || `알 수 없는 병원 (${result.dbName})`;
+
+        const hospitalName =
+          HospitalMap[result.dbName]?.hospitalName ||
+          `알 수 없는 병원 (${result.dbName})`;
         const queryMap = summary.get(result.queryName)!;
-        queryMap.set(hospitalName, (queryMap.get(result.queryName) || 0) + result.count);
+        queryMap.set(
+          hospitalName,
+          (queryMap.get(result.queryName) || 0) + result.count
+        );
         totalCount += result.count;
       }
     }
@@ -43,12 +54,14 @@ export class SlackService {
     }
 
     let message = `🚨 *메디씨 데이터 불일치 감지 결과*\n\n`;
-    message += `📊 *총 ${totalCount}건의 이상 항목이 감지되었습니다.*\n\n`;
+    message += `📊 *${this.config.startDate}날짜 이후로 총 ${totalCount}건의 이상 항목이 감지되었습니다.*\n\n`;
 
     for (const [queryName, hospitalMap] of summary) {
-      const description = QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]?.excelSheetName || queryName;
+      const description =
+        QUERY_TYPE_INFO[queryName as keyof typeof QUERY_TYPE_INFO]
+          ?.excelSheetName || queryName;
       message += `*[${description}] - 총 ${[...hospitalMap.values()].reduce((a, b) => a + b, 0)}건*\n`;
-      
+
       for (const [hospitalName, count] of hospitalMap) {
         if (count > 0) {
           message += `  • ${hospitalName}: ${count}건\n`;
@@ -63,7 +76,10 @@ export class SlackService {
     return message;
   }
 
-  async sendDetectionResults(results: DetectionResult[], excelFilePath?: string): Promise<void> {
+  async sendDetectionResults(
+    results: DetectionResult[],
+    excelFilePath?: string
+  ): Promise<void> {
     if (!this.config.enabled || !this.client) {
       console.log('Slack 알림이 비활성화되어 있습니다.');
       return;
@@ -71,13 +87,13 @@ export class SlackService {
 
     try {
       const message = this.formatDetectionSummary(results);
-      
+
       // 텍스트 메시지 전송
       const response = await this.client.chat.postMessage({
         channel: this.config.channel,
         text: message,
         unfurl_links: false,
-        unfurl_media: false
+        unfurl_media: false,
       });
 
       console.log('Slack 메시지가 전송되었습니다.');
@@ -86,7 +102,6 @@ export class SlackService {
       if (excelFilePath && fs.existsSync(excelFilePath)) {
         await this.uploadFile(excelFilePath, response.ts);
       }
-
     } catch (error) {
       console.error('Slack 알림 전송 실패:', (error as Error).message);
     }
@@ -98,9 +113,12 @@ export class SlackService {
     try {
       const fileName = path.basename(filePath);
       const fileStats = fs.statSync(filePath);
-      
-      if (fileStats.size > 50 * 1024 * 1024) { // 50MB 제한
-        console.warn(`파일 크기가 너무 큽니다 (${Math.round(fileStats.size / 1024 / 1024)}MB). Slack 업로드를 건너뜁니다.`);
+
+      if (fileStats.size > 50 * 1024 * 1024) {
+        // 50MB 제한
+        console.warn(
+          `파일 크기가 너무 큽니다 (${Math.round(fileStats.size / 1024 / 1024)}MB). Slack 업로드를 건너뜁니다.`
+        );
         return;
       }
 
@@ -109,7 +127,7 @@ export class SlackService {
         file: fs.createReadStream(filePath),
         filename: fileName,
         title: `스케줄 감지 결과 - ${fileName}`,
-        initial_comment: '📋 상세한 감지 결과가 포함된 Excel 파일입니다.'
+        initial_comment: '📋 상세한 감지 결과가 포함된 Excel 파일입니다.',
       };
 
       if (threadTs) {
@@ -119,7 +137,6 @@ export class SlackService {
       await this.client.files.uploadV2(uploadParams);
 
       console.log(`Excel 파일이 Slack에 업로드되었습니다: ${fileName}`);
-
     } catch (error) {
       console.error('Slack 파일 업로드 실패:', (error as Error).message);
     }
@@ -136,11 +153,10 @@ export class SlackService {
         channel: this.config.channel,
         text: message,
         unfurl_links: false,
-        unfurl_media: false
+        unfurl_media: false,
       });
 
       console.log('Slack 커스텀 메시지가 전송되었습니다.');
-
     } catch (error) {
       console.error('Slack 메시지 전송 실패:', (error as Error).message);
     }
@@ -162,10 +178,11 @@ export class SlackService {
   }
 
   async sendErrorMessage(error: Error): Promise<void> {
-    const message = `❌ * 메디씨 데이터 불일치 감지 오류*\n\n` +
-                   `🚫 오류 메시지: \`${error.message}\`\n` +
-                   `⏰ ${new Date().toLocaleString('ko-KR')}`;
-    
+    const message =
+      `❌ * 메디씨 데이터 불일치 감지 오류*\n\n` +
+      `🚫 오류 메시지: \`${error.message}\`\n` +
+      `⏰ ${new Date().toLocaleString('ko-KR')}`;
+
     await this.sendCustomMessage(message);
   }
 }
