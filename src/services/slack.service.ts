@@ -53,8 +53,15 @@ export class SlackService {
       return '🎉 *메디씨 데이터 불일치 감지 결과*\n\n✅ 감지된 이상 항목이 없습니다.';
     }
 
+    // "YYYY년 MM월 DD일" 형식으로 변환
+    const rawDate = this.config.startDate;
+    const year = rawDate.slice(0, 4);
+    const month = rawDate.slice(4, 6);
+    const day = rawDate.slice(6, 8);
+    const formatted = `${year}년 ${month}월 ${day}일`;
+
     let message = `🚨 *메디씨 데이터 불일치 감지 결과*\n\n`;
-    message += `📊 *${this.config.startDate}날짜 이후로 총 ${totalCount}건의 이상 항목이 감지되었습니다.*\n\n`;
+    message += `📊 *${formatted} 날짜 이후로 총 ${totalCount}건의 이상 항목이 감지되었습니다.*\n\n`;
 
     for (const [queryName, hospitalMap] of summary) {
       const description =

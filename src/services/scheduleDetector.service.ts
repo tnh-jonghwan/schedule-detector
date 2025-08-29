@@ -42,7 +42,7 @@ export class ScheduleDetectorService {
       {
         name: QUERY_TYPE.INSURANCE_MISMATCH,
         description: QUERY_TYPE_INFO[QUERY_TYPE.INSURANCE_MISMATCH].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, H.INSID, P.PATID, S.SCHID, M.MRID
+        query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, IF(M.PACAT = 1, '의과', '한의과') AS PACAT, H.INSID, P.PATID, S.SCHID, M.MRID
                 FROM {dbName}.TSCHEDULE S
                 JOIN {dbName}.THEALTHINSURANCE H ON H.SCHID = S.SCHID
                 JOIN {dbName}.TMEDICALRECORD M ON M.MRID = H.MRID
@@ -55,7 +55,7 @@ export class ScheduleDetectorService {
         name: QUERY_TYPE.CONSULTTIME_MISMATCH,
         description:
           QUERY_TYPE_INFO[QUERY_TYPE.CONSULTTIME_MISMATCH].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, S.SCHDATE, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, E.EMPLNAME, P.PATID, S.SCHID, M.MRID, E.EMPLID
+        query: `SELECT P.PATNAME, P.CHARTNO, S.SCHDATE, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, IF(M.PACAT = 1, '의과', '한의과') AS PACAT, E.EMPLNAME, P.PATID, S.SCHID, M.MRID, E.EMPLID
                 FROM {dbName}.TSCHEDULE S 
                 JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
                 JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
@@ -65,16 +65,39 @@ export class ScheduleDetectorService {
                 AND S.SCHDATE != SUBSTR(M.CONSULTTIME, 1, 8)`,
         enabled: true,
       },
+      // {
+      //   name: QUERY_TYPE.DUPLICATE_SCHEDULE,
+      //   description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
+      //   query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
+      //           FROM {dbName}.TSCHEDULE A
+      //           JOIN {dbName}.TSCHEDULE B ON B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID
+      //           JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
+      //           JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID
+      //           WHERE A.SCHTYPE = 2 AND B.SCHTYPE = 2 AND (A.SCHSTATUS != 20 AND B.SCHSTATUS != 20)
+      //           AND A.SCHDATE >= ?`,
+      //   enabled: true,
+      // },
       {
         name: QUERY_TYPE.DUPLICATE_SCHEDULE,
         description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
+        query: `SELECT C.PATNAME, C.CHARTNO, C.SCHDATE, C.EMPLNAME, C.PATID, IF(M1.PACAT = 1, '의과', '한의과') AS A_PACAT, IF(M2.PACAT = 1, '의과', '한의과') AS B_PACAT, A_SCHID, B_SCHID
+                FROM (
+                SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
                 FROM {dbName}.TSCHEDULE A
-                JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID
+                JOIN {dbName}.TSCHEDULE B ON
+	                B.SCHDRID = A.SCHDRID
+	                AND A.SCHID < B.SCHID
+	                AND A.INSTYPE = B.INSTYPE
+	                AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID
+	
                 JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
                 WHERE A.SCHTYPE = 2 AND B.SCHTYPE = 2 AND (A.SCHSTATUS != 20 AND B.SCHSTATUS != 20)
-                AND A.SCHDATE >= ?`,
+                AND A.SCHDATE >= ?
+                ) C
+                JOIN {dbName}.TMEDICALRECORD M1 ON M1.SCHID = C.A_SCHID
+                JOIN {dbName}.TMEDICALRECORD M2 ON M2.SCHID = C.B_SCHID
+                WHERE LEFT(M1.CONSULTTIME, 8) = LEFT(M2.CONSULTTIME, 8)`,
         enabled: true,
       },
 
@@ -90,33 +113,55 @@ export class ScheduleDetectorService {
       //           AND A.SCHDATE >= ?`,
       //   enabled: true,
       // },
+      // {
+      //   name: QUERY_TYPE.SCHEDULE_TWIST,
+      //   description: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].description,
+      //   query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, P.PATID, R.MRID, S.SCHID
+      //           FROM {dbName}.TSCHEDULE S
+      //           JOIN {dbName}.TPATIENT P
+      //               ON P.PATID = S.PATID
+      //           JOIN {dbName}.TMEDICALRECORD M
+      //               ON S.SCHID = M.SCHID
+      //           JOIN {dbName}.TRECORDCHGLOG R
+      //               ON R.MRID = M.MRID
+      //           WHERE S.SCHDATE >= ?
+      //             AND S.SCHTYPE = 2
+      //           GROUP BY R.MRID, S.SCHID
+      //           HAVING SUM(R.SCHID) % S.SCHID <> 0;`,
+      //   enabled: true,
+      // },
       {
         name: QUERY_TYPE.SCHEDULE_TWIST,
         description: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, R.MRID, S.SCHID
-                FROM {dbName}.TSCHEDULE S
-                JOIN {dbName}.TPATIENT P
-                    ON P.PATID = S.PATID
-                JOIN {dbName}.TMEDICALRECORD M 
-                    ON S.SCHID = M.SCHID 
-                JOIN {dbName}.TRECORDCHGLOG R 
-                    ON R.MRID = M.MRID
-                WHERE S.SCHDATE >= ?
-                  AND S.SCHTYPE = 2
-                GROUP BY R.MRID, S.SCHID
-                HAVING SUM(R.SCHID) % S.SCHID <> 0;`,
+        query: `SELECT A.PATNAME, A.CHARTNO, A.CONSULTDATE, A.PACAT, A.PATID, A.MRID, A.SCHID, A.MAX_CHGLOGID
+                FROM (
+                  SELECT LEFT(M.CONSULTTIME,6),  COUNT(*), P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, IF(M.PACAT = 1, '의과', '한의과') AS PACAT, P.PATID, R.MRID, S.SCHID, MAX(R.CHGLOGID) AS MAX_CHGLOGID
+                  FROM {dbName}.TSCHEDULE S
+                  JOIN {dbName}.TPATIENT P
+                      ON P.PATID = S.PATID
+                  JOIN {dbName}.TMEDICALRECORD M 
+                      ON S.SCHID = M.SCHID 
+                  JOIN {dbName}.TRECORDCHGLOG R 
+                      ON R.MRID = M.MRID
+                  WHERE S.SCHDATE >= ?
+                    AND S.SCHTYPE = 2
+                  GROUP BY R.MRID, S.SCHID
+                  HAVING SUM(R.SCHID) % S.SCHID <> 0
+                ) A
+                JOIN {dbName}.TRECORDCHGLOG L ON L.CHGLOGID = A.MAX_CHGLOGID
+                WHERE A.SCHID != L.SCHID`,
         enabled: true,
       },
       {
         name: QUERY_TYPE.DUPLICATE_MEAL,
         description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_MEAL].description,
-        query: `SELECT P.PATNAME, P.CHARTNO, E.EMPLNAME, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, I.ITEMNAME, COUNT(*) AS CNT, P.PATID, M.MRID
+        query: `SELECT P.PATNAME, P.CHARTNO, E.EMPLNAME, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, I.ITEMNAME, COUNT(*) AS CNT, IF(M.PACAT = 1, '의과', '한의과') AS PACAT, P.PATID, M.MRID
                 FROM {dbName}.TSCHEDULE S
                 JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
                 JOIN {dbName}.TMEDICALITEM I ON I.MRID = M.MRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = M.PATID
                 JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = M.DRID
-                WHERE S.SCHDATE >= ?
+                WHERE S.SCHDATE >= ? 
                 AND I.CATNO IN ("20001001", "20002001", "41003001", "51003001")
                 GROUP BY M.MRID, I.CATNO, I.ITEMCODE
                 HAVING COUNT(*) >= 2;`,
