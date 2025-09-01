@@ -65,18 +65,6 @@ export class ScheduleDetectorService {
                 AND S.SCHDATE != SUBSTR(M.CONSULTTIME, 1, 8)`,
         enabled: true,
       },
-      // {
-      //   name: QUERY_TYPE.DUPLICATE_SCHEDULE,
-      //   description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
-      //   query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
-      //           FROM {dbName}.TSCHEDULE A
-      //           JOIN {dbName}.TSCHEDULE B ON B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID
-      //           JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
-      //           JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID
-      //           WHERE A.SCHTYPE = 2 AND B.SCHTYPE = 2 AND (A.SCHSTATUS != 20 AND B.SCHSTATUS != 20)
-      //           AND A.SCHDATE >= ?`,
-      //   enabled: true,
-      // },
       {
         name: QUERY_TYPE.DUPLICATE_SCHEDULE,
         description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
@@ -100,36 +88,6 @@ export class ScheduleDetectorService {
                 WHERE LEFT(M1.CONSULTTIME, 8) = LEFT(M2.CONSULTTIME, 8)`,
         enabled: true,
       },
-
-      // {
-      //   name: QUERY_TYPE.DUPLICATE_SCHEDULE,
-      //   description: QUERY_TYPE_INFO[QUERY_TYPE.DUPLICATE_SCHEDULE].description,
-      //   query: `SELECT P.PATNAME, P.CHARTNO, A.SCHDATE, E.EMPLNAME, P.PATID, A.SCHID AS A_SCHID, B.SCHID AS B_SCHID
-      //           FROM {dbName}.TSCHEDULE A
-      //           JOIN {dbName}.TSCHEDULE B ON B.SCHDATE = A.SCHDATE AND B.SCHDRID = A.SCHDRID AND A.SCHID < B.SCHID AND A.INSTYPE = B.INSTYPE AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID
-      //           JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
-      //           JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID
-      //           WHERE A.SCHTYPE = 2
-      //           AND A.SCHDATE >= ?`,
-      //   enabled: true,
-      // },
-      // {
-      //   name: QUERY_TYPE.SCHEDULE_TWIST,
-      //   description: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].description,
-      //   query: `SELECT P.PATNAME, P.CHARTNO, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, P.PATID, R.MRID, S.SCHID
-      //           FROM {dbName}.TSCHEDULE S
-      //           JOIN {dbName}.TPATIENT P
-      //               ON P.PATID = S.PATID
-      //           JOIN {dbName}.TMEDICALRECORD M
-      //               ON S.SCHID = M.SCHID
-      //           JOIN {dbName}.TRECORDCHGLOG R
-      //               ON R.MRID = M.MRID
-      //           WHERE S.SCHDATE >= ?
-      //             AND S.SCHTYPE = 2
-      //           GROUP BY R.MRID, S.SCHID
-      //           HAVING SUM(R.SCHID) % S.SCHID <> 0;`,
-      //   enabled: true,
-      // },
       {
         name: QUERY_TYPE.SCHEDULE_TWIST,
         description: QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_TWIST].description,
