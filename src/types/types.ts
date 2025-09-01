@@ -166,8 +166,8 @@ export const QUERY_TYPE_INFO = {
     excelSheetName: '스케줄, 차트 날짜 불일치 오류',
   },
   [QUERY_TYPE.SCHEDULE_TWIST]: {
-    description: '입원 차트에서 차트 저장 시 스케줄이 꼬이는 경우',
-    excelSheetName: '차트 저장 시 스케줄이 꼬이는 경우 오류',
+    description: '입원 차트에서 차트와 차트수정기록의 SCHID가 다른 경우',
+    excelSheetName: '차트와 차트수정기록의 SCHID가 다른 오류',
   },
   [QUERY_TYPE.DUPLICATE_MEAL]: {
     description: '입원 차트에서 중복 식이가 존재하는 경우',
