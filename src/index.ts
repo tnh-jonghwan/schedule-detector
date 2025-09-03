@@ -24,7 +24,6 @@ async function runDetection(): Promise<void> {
 
 async function main(): Promise<void> {
   console.log(`===== 메디씨 데이터 불일치 감지 결과 =====\n[${formatTime()}]`);
-  console.log(`스케줄: 오전 9시, 오후 2시 (한국 시간)`);
   console.log(`한 번만 실행: ${config.scheduler.runOnce ? '예' : '아니오'}\n`);
 
   // 한 번만 실행하는 경우
