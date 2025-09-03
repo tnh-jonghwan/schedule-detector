@@ -150,6 +150,8 @@ export enum QUERY_TYPE {
   SCHEDULE_TWIST = 'SCHEDULE_TWIST',
   DUPLICATE_MEAL = 'DUPLICATE_MEAL',
   SCHEDULE_VISITTYPE_MISMATCH = 'SCHEDULE_VISITTYPE_MISMATCH',
+  SCHEDULE_MULTI_DEPT_ERROR = 'SCHEDULE_MULTI_DEPT_ERROR',
+  PATID_TWIST = 'PATID_TWIST',
 }
 
 export const QUERY_TYPE_INFO = {
@@ -176,6 +178,14 @@ export const QUERY_TYPE_INFO = {
   [QUERY_TYPE.SCHEDULE_VISITTYPE_MISMATCH]: {
     description: '입원 주 스케줄의 진료구분이 협진인 경우',
     excelSheetName: '입원 주 스케줄 진료구분 오류',
+  },
+  [QUERY_TYPE.SCHEDULE_MULTI_DEPT_ERROR]: {
+    description: '입원 주 스케줄에 한의과, 의과 차트가 들어가 있는 경우',
+    excelSheetName: '입원 주 스케줄에 의과, 한의과 차트 중복 오류',
+  },
+  [QUERY_TYPE.PATID_TWIST]: {
+    description: '환자 ID가 꼬인 경우',
+    excelSheetName: '환자ID 꼬이는 오류',
   },
 };
 

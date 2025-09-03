@@ -137,7 +137,39 @@ export class ScheduleDetectorService {
                 AND S.SCHDATE >= ?
                 AND S.ORGSCHID = 0 
                 AND S.VISITTYPE IN (5, 6) 
-                AND S.MIG = 0`,
+                AND S.MIG = 0;`,
+        enabled: true,
+      },
+      {
+        name: QUERY_TYPE.SCHEDULE_MULTI_DEPT_ERROR,
+        description:
+          QUERY_TYPE_INFO[QUERY_TYPE.SCHEDULE_MULTI_DEPT_ERROR].description,
+        query: `SELECT P.PATNAME, P.CHARTNO, E.EMPLNAME, SUBSTR(M.CONSULTTIME, 1, 8) AS CONSULTDATE, P.PATID, S.SCHID, M.MRID
+                FROM {dbName}.TSCHEDULE S
+                JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
+                JOIN {dbName}.TPATIENT P ON P.PATID = S.PATID
+                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = S.SCHDRID
+                WHERE S.SCHTYPE = 2 AND S.VISITTYPE IN (1,2,3)
+                AND S.SCHDATE >= ?
+                GROUP BY S.SCHID
+                HAVING COUNT(DISTINCT M.PACAT) >= 2;`,
+        enabled: true,
+      },
+      {
+        name: QUERY_TYPE.PATID_TWIST,
+        description: QUERY_TYPE_INFO[QUERY_TYPE.PATID_TWIST].description,
+        query: `SELECT *
+                FROM (
+	                SELECT S.PATID AS S_PATID, MAX(R.CHGLOGID) AS MAX_CHGLOGID, R.MRID
+	                FROM {dbName}.TSCHEDULE S
+	                JOIN {dbName}.TMEDICALRECORD M ON M.SCHID = S.SCHID
+	                JOIN {dbName}.TRECORDCHGLOG R ON R.MRID = M.MRID
+	                WHERE S.SCHDATE >= ?
+	                GROUP BY R.MRID
+	                HAVING COUNT(DISTINCT R.PATID) >= 2
+                ) A
+                JOIN {dbName}.TRECORDCHGLOG L ON L.CHGLOGID = A.MAX_CHGLOGID
+                WHERE A.S_PATID != L.PATID;`,
         enabled: true,
       },
     ];

@@ -5,7 +5,6 @@ import {
   DetectionResult,
   DetectionRow,
   HospitalMap,
-  QUERY_TYPE,
   QUERY_TYPE_INFO,
   FIELD_NAME_MAPPING,
 } from '../types/types.js';
