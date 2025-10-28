@@ -36,16 +36,17 @@ async function main(): Promise<void> {
   // 한국 시간 기준 오전 9시부터 오후 6시까지 30분 주기 실행
   console.log('크론 스케줄러를 시작합니다...');
 
-  cron.schedule(
-    '0,30 9-18 * * *',
-    async () => {
-      console.log(`[${formatTime()}] 30분 주기 정기 실행 시작`);
-      await runDetection();
-    },
-    {
-      timezone: 'Asia/Seoul',
-    }
-  );
+  // cron.schedule(
+  //   '0,30 9-18 * * *',
+  //   async () => {
+  //     console.log(`[${formatTime()}] 30분 주기 정기 실행 시작`);
+  //   },
+  //   {
+  //     timezone: 'Asia/Seoul',
+  //   }
+  // );
+
+  await runDetection();
 
   console.log('스케줄러가 시작되었습니다. 다음 실행 시간을 기다리는 중...');
 

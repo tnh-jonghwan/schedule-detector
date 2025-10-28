@@ -27,7 +27,7 @@ export class ScheduleDetectorService {
       includeTimestamp: config.excel.includeTimestamp,
       separateSheets: config.excel.separateSheets,
     });
-    this.startDate = '20250701';
+    this.startDate = '20251001';
     this.slackService = new SlackService({
       enabled: config.slack.enabled,
       token: config.slack.token,
