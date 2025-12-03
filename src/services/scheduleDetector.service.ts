@@ -189,7 +189,7 @@ export class ScheduleDetectorService {
                 GROUP BY M.MRID
                 HAVING 
                   COUNT(*) = SUM(IF(I.ITEMCODE = 'P0001002', 1, 0))
-                  AND SUM(IF(I.ITEMCODE = 'P0001002', 1, 0)) = 2;`,
+                  AND SUM(IF(I.ITEMCODE = 'P0001002', 1, 0)) <= 2;`,
         enabled: true,
       },
     ];

@@ -189,8 +189,8 @@ export const QUERY_TYPE_INFO = {
     excelSheetName: '환자ID 꼬이는 오류',
   },
   [QUERY_TYPE.P0001002_ONLY_TWICE]: {
-    description: '부항컵이 딱 2개만 남는 경우',
-    excelSheetName: '부항컵이 딱 2개만 남는 경우',
+    description: '차트에 부항컵이 2개 이하만 남은 경우',
+    excelSheetName: '차트에 부항컵이 2개 이하만 남은 경우',
   },
 };
 
