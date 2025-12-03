@@ -76,7 +76,7 @@ export class ScheduleDetectorService {
 	                B.SCHDRID = A.SCHDRID
 	                AND A.SCHID < B.SCHID
 	                AND A.INSTYPE = B.INSTYPE
-	                AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID
+	                AND A.VISITTYPE = B.VISITTYPE AND B.VISITTYPE != 0 AND A.PATID = B.PATID AND A.ORGSCHID = B.ORGSCHID AND A.SCHSTATUS = B.SCHSTATUS AND A.SCHDATE = B.SCHDATE
 	
                 JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = A.SCHDRID
                 JOIN {dbName}.TPATIENT P ON P.PATID = A.PATID 
@@ -170,6 +170,26 @@ export class ScheduleDetectorService {
                 ) A
                 JOIN {dbName}.TRECORDCHGLOG L ON L.CHGLOGID = A.MAX_CHGLOGID
                 WHERE A.S_PATID != L.PATID;`,
+        enabled: true,
+      },
+      {
+        name: QUERY_TYPE.P0001002_ONLY_TWICE,
+        description:
+          QUERY_TYPE_INFO[QUERY_TYPE.P0001002_ONLY_TWICE].description,
+        query: `SELECT 
+	                P.CHARTNO, P.PATNAME, E.EMPLNAME, LEFT(M.CONSULTTIME, 8) CONSULTDATE,
+	                P.PATID, M.SCHID, M.MRID
+                FROM {dbName}.TMEDICALITEM I
+                JOIN {dbName}.TMEDICALRECORD M ON M.MRID = I.MRID
+                JOIN {dbName}.TSCHEDULE S ON S.SCHID = I.SCHID
+                JOIN {dbName}.TPATIENT P ON P.PATID = M.PATID
+                JOIN {dbName}.TEMPLOYEE E ON E.EMPLID = M.DRID
+                WHERE S.SCHDATE >= ?
+                  AND M.PACAT = 9
+                GROUP BY M.MRID
+                HAVING 
+                  COUNT(*) = SUM(IF(I.ITEMCODE = 'P0001002', 1, 0))
+                  AND SUM(IF(I.ITEMCODE = 'P0001002', 1, 0)) = 2;`,
         enabled: true,
       },
     ];

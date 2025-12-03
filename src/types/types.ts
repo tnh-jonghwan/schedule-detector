@@ -152,6 +152,7 @@ export enum QUERY_TYPE {
   SCHEDULE_VISITTYPE_MISMATCH = 'SCHEDULE_VISITTYPE_MISMATCH',
   SCHEDULE_MULTI_DEPT_ERROR = 'SCHEDULE_MULTI_DEPT_ERROR',
   PATID_TWIST = 'PATID_TWIST',
+  P0001002_ONLY_TWICE = 'P0001002_ONLY_TWICE',
 }
 
 export const QUERY_TYPE_INFO = {
@@ -186,6 +187,10 @@ export const QUERY_TYPE_INFO = {
   [QUERY_TYPE.PATID_TWIST]: {
     description: '환자 ID가 꼬인 경우',
     excelSheetName: '환자ID 꼬이는 오류',
+  },
+  [QUERY_TYPE.P0001002_ONLY_TWICE]: {
+    description: '부항컵이 딱 2개만 남는 경우',
+    excelSheetName: '부항컵이 딱 2개만 남는 경우',
   },
 };
 
