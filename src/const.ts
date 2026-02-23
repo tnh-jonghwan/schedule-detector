@@ -13,8 +13,7 @@ export const ENV = {
   DEFAULT_PASSWORD: process.env.DEFAULT_PASSWORD,
   QUERY_TIMEOUT: process.env.QUERY_TIMEOUT,
 
-  // 스케줄러 설정
-  RUN_ONCE: process.env.RUN_ONCE,
+  // 배치 설정
   BATCH_SIZE: process.env.BATCH_SIZE,
 
   // Excel 내보내기 설정

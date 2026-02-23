@@ -7,7 +7,6 @@
 ### 1. 의존성 설치
 
 ```bash
-# pnpm 설치 (권장)
 pnpm install
 ```
 
@@ -19,12 +18,12 @@ pnpm install
 cp .env.example .env
 ```
 
-### 3. 스크립트 실행
+### 3. 실행
 
-다음 명령어를 통해 직접 실행할 수 있습니다:
+`pnpm start` 명령어로 실행하면 **한 번 감지 후 종료**됩니다.  
+반복 실행은 **crontab**으로 스케줄링하세요.
 
 ```bash
-# 프로덕션 실행
 pnpm start
 ```
 
@@ -32,19 +31,23 @@ pnpm start
 
 ## ⏰ 자동화 실행 방법 (Crontab 사용)
 
-한국 시간 기준 평일, 주말 관계없이 **오전 9시부터 오후 6시까지 매 30분 간격**으로 자동으로 스크립트가 실행되도록 설정하려면 `crontab`을 사용합니다.
+한국 시간 기준 **오전 9시부터 오후 6시까지 매 30분 간격** 자동 실행 설정 방법입니다.
 
-1. 서버(또는 로컬 PC) 터미널을 열고 크론탭 수정 모드에 진입합니다:
+### 1. crontab 편집
 
 ```bash
 crontab -e
 ```
 
-2. 파일 맨 아래에 다음 내용을 추가합니다 (경로는 사용자 환경에 맞게 조정되었음):
+### 2. 아래 내용을 자신의 환경에 맞게 수정 후 붙여넣기
 
 ```bash
-# 평일과 주말 상관없이 매일 09:00 ~ 18:00 동안 30분 간격으로 실행
-*/30 9-18 * * * cd /home/jongdeug/workspace/schedule-detector && /home/jongdeug/.nvm/versions/node/v24.13.1/bin/pnpm start >> /home/jongdeug/workspace/schedule-detector/cron.log 2>&1
+PATH=/home/{USER}/.nvm/versions/node/v24.13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# m h  dom mon dow   command
+*/30 9-18 * * * cd /home/{USER}/workspace/schedule-detector && pnpm start >> /home/{USER}/workspace/schedule-detector/cron.log 2>&1
 ```
 
-3. 저장하고 닫습니다. 이제 지정된 시간에 자동으로 스크립트가 실행되며 실행 기록 및 에러 내용은 `cron.log` 파일에 저장됩니다.
+> **PATH 설정이 중요합니다.** cron 환경에서는 nvm으로 설치된 node를 인식하지 못하므로 반드시 PATH를 명시해야 합니다.
+
+실행 기록과 에러 내용은 `cron.log` 파일에 저장됩니다.

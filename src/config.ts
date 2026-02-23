@@ -14,9 +14,7 @@ export interface Config {
   databases: DatabaseConfig[];
   batchSize: number;
   queryTimeout: number;
-  scheduler: {
-    runOnce: boolean;
-  };
+
   excel: {
     enabled: boolean;
     outputDir: string;
@@ -60,9 +58,7 @@ const config: Config = {
   })),
   batchSize: parseInt(ENV.BATCH_SIZE || '100'),
   queryTimeout: parseInt(ENV.QUERY_TIMEOUT || '30000'),
-  scheduler: {
-    runOnce: ENV.RUN_ONCE === 'true',
-  },
+
   excel: {
     enabled: ENV.EXCEL_EXPORT === 'true',
     outputDir: ENV.EXCEL_OUTPUT_DIR || './exports',
