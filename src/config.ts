@@ -32,6 +32,7 @@ export interface Config {
     signingSecret: string;
     verificationToken: string;
   };
+  startDate: string;
 }
 
 dotenv.config();
@@ -77,6 +78,7 @@ const config: Config = {
     signingSecret: ENV.SLACK_SIGNING_SECRET || '',
     verificationToken: ENV.SLACK_VERIFICATION_TOKEN || '',
   },
+  startDate: ENV.START_DATE || '20260101',
 };
 
 export default config;

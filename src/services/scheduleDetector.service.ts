@@ -17,7 +17,6 @@ export class ScheduleDetectorService {
   private dbService: DatabaseService;
   private excelService: ExcelService;
   private slackService: SlackService;
-  private startDate: string;
   private detectionQueries: DetectionQuery[];
 
   constructor() {
@@ -27,12 +26,11 @@ export class ScheduleDetectorService {
       includeTimestamp: config.excel.includeTimestamp,
       separateSheets: config.excel.separateSheets,
     });
-    this.startDate = '20251001';
     this.slackService = new SlackService({
       enabled: config.slack.enabled,
       token: config.slack.token,
       channel: config.slack.channel,
-      startDate: this.startDate,
+      startDate: config.startDate,
     });
     this.detectionQueries = this.initializeDetectionQueries();
   }
@@ -219,7 +217,7 @@ export class ScheduleDetectorService {
       const rows = await this.dbService.executeQuery<DetectionRow>(
         dbRoute,
         query,
-        [this.startDate]
+        [config.startDate]
       );
 
       // 여기
